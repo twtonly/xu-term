@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>📚 学生工作量 & 计划统计</title>
+<style>
+    * {
+        box-sizing: border-box;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        margin: 0;
+        padding: 0;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+        background: linear-gradient(145deg, #eef5fb 0%, #dce9f5 100%);
+        min-height: 100vh;
+        padding: 1rem;
+        color: #0b2b3b;
+        font-size: 15px;
+    }
+
+    .app {
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+
+    /* 顶部标题 */
+    .header {
+        background: linear-gradient(135deg, #1e6f9f, #2c8cc4);
+        color: white;
+        border-radius: 1.4rem;
+        padding: 1.3rem 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 10px 25px -10px rgba(30, 111, 159, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+    }
+
+    .header h1 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+    }
+
+    .header .today-badge {
+        background: rgba(255, 255, 255, 0.25);
+        padding: 0.4rem 0.9rem;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        backdrop-filter: blur(4px);
+    }
+
+    /* 标签切换 */
+    .tabs {
+        display: flex;
+        background: white;
+        border-radius: 1rem;
+        padding: 0.35rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 12px -6px rgba(0, 0, 0, 0.15);
+        overflow-x: auto;
+        gap: 0.25rem;
+    }
+
+    .tab-btn {
+        flex: 1;
+        min-width: 90px;
+        border: none;
+        background: transparent;
+        padding: 0.65rem 0.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 0.88rem;
+        color: #5580a0;
+        cursor: pointer;
+        transition: 0.2s;
+        white-space: nowrap;
+    }
+
+    .tab-btn.active {
+        background: #1e6f9f;
+        color: white;
+        box-shadow: 0 4px 10px -3px rgba(30, 111, 159, 0.5);
+    }
+
+    /* 面板 */
+    .panel {
+        display: none;
+        animation: fadeIn 0.25s ease;
+    }
+
+    .panel.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 卡片 */
+    .card {
+        background: white;
+        border-radius: 1.4rem;
+        padding: 1.3rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 8px 20px -12px rgba(0, 20, 30, 0.18);
+        border: 1px solid #ffffff;
+    }
+
+    .card h2 {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #1c4e6e;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.6rem;
+        border-bottom: 2px dashed #cde3f0;
+    }
+
+    /* 表单 */
+    .form-group {
+        margin-bottom: 0.9rem;
+    }
+
+    label {
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: #2e6a8c;
+        margin-bottom: 0.35rem;
+    }
+
+    input, textarea {
+        width: 100%;
+        padding: 0.7rem 0.9rem;
+        border-radius: 0.9rem;
+        border: 1.5px solid #d0e3f0;
+        background: #fafdff;
+        font-size: 0.95rem;
+        transition: 0.15s;
+        outline: none;
+        color: #0b2b3b;
+        font-weight: 500;
+        font-family: inherit;
+    }
+
+    input:focus, textarea:focus {
+        border-color: #4b8bbe;
+        background: #ffffff;
+        box-shadow: 0 0 0 4px rgba(75, 139, 190, 0.15);
+    }
+
+    textarea {
+        resize: vertical;
+        min-height: 70px;
+        line-height: 1.45;
+    }
+
+    .row {
+        display: flex;
+        gap: 0.7rem;
+        flex-wrap: wrap;
+    }
+
+    .row .form-group {
+        flex: 1;
+        min-width: 130px;
+        margin-bottom: 0;
+    }
+
+    /* 按钮 */
+    .btn {
+        border: none;
+        background: #1e6f9f;
+        color: white;
+        font-weight: 600;
+        padding: 0.75rem 1.3rem;
+        border-radius: 0.9rem;
+        font-size: 0.92rem;
+        cursor: pointer;
+        transition: 0.15s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        box-shadow: 0 5px 12px -5px rgba(30, 111, 159, 0.55);
+        font-family: inherit;
+        white-space: nowrap;
+    }
+
+    .btn:hover { background: #135a82; }
+    .btn:active { transform: scale(0.97); }
+
+    .btn-block { width: 100%; }
+
+    .btn-secondary {
+        background: #eaf2f8;
+        color: #1c4e6e;
+        box-shadow: none;
+    }
+
+    .btn-secondary:hover { background: #d7e6f2; }
+
+    .btn-danger {
+        background: #c74a4a;
+        box-shadow: 0 5px 12px -5px rgba(199, 74, 74, 0.5);
+    }
+
+    .btn-danger:hover { background: #a83939; }
+
+    .btn-success {
+        background: #2c8c62;
+        box-shadow: 0 5px 12px -5px rgba(44, 140, 98, 0.5);
+    }
+
+    .btn-success:hover { background: #22714e; }
+
+    .btn-sm {
+        padding: 0.5rem 0.9rem;
+        font-size: 0.82rem;
+        border-radius: 0.7rem;
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+        margin-top: 0.8rem;
+    }
+
+    /* 学生条目 */
+    .student-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+        max-height: 500px;
+        overflow-y: auto;
+        padding-right: 0.2rem;
+    }
+
+    .student-item {
+        background: #f6fbff;
+        border-radius: 1.1rem;
+        padding: 1rem 1.1rem;
+        border-left: 5px solid #4b8bbe;
+        border-top: 1px solid #e1eff9;
+        border-right: 1px solid #e1eff9;
+        border-bottom: 1px solid #e1eff9;
+        transition: 0.15s;
+    }
+
+    .student-item:hover {
+        background: #ffffff;
+        border-left-color: #1e6f9f;
+    }
+
+    .student-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .student-name {
+        font-weight: 700;
+        font-size: 1.05rem;
+        color: #0b3954;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        word-break: break-all;
+    }
+
+    .badge {
+        padding: 0.25rem 0.8rem;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 0.78rem;
+        color: white;
+        white-space: nowrap;
+    }
+
+    .badge-low { background: #2c8c62; }
+    .badge-medium { background: #d18f2c; }
+    .badge-high { background: #c74a4a; }
+
+    .plan-text {
+        font-size: 0.88rem;
+        color: #2d4e64;
+        background: #ffffff;
+        padding: 0.6rem 0.85rem;
+        border-radius: 0.8rem;
+        line-height: 1.45;
+        word-break: break-word;
+        border: 1px solid #d9eaf5;
+    }
+
+    .plan-label {
+        font-weight: 700;
+        color: #1c4e6e;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-right: 0.3rem;
+    }
+
+    .empty-message {
+        color: #608aa3;
+        font-style: italic;
+        text-align: center;
+        padding: 2rem 1rem;
+        background: #f2f8fd;
+        border-radius: 1.1rem;
+        font-size: 0.9rem;
+        border: 1px dashed #b8d4e7;
+    }
+
+    /* 汇总条 */
+    .summary-bar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 0.7rem;
+        margin-bottom: 1rem;
+    }
+
+    .summary-card {
+        background: white;
+        border-radius: 1.1rem;
+        padding: 0.9rem 0.8rem;
+        text-align: center;
+        box-shadow: 0 6px 15px -10px rgba(0, 20, 30, 0.25);
+        border: 1px solid #ffffff;
+    }
+
+    .summary-card .num {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1e6f9f;
+        line-height: 1.2;
+    }
+
+    .summary-card .lbl {
+        font-size: 0.72rem;
+        color: #5580a0;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        margin-top: 0.2rem;
+    }
+
+    /* 图表条 */
+    .chart-row {
+        margin-bottom: 1rem;
+    }
+
+    .chart-row .chart-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #2d4e64;
+        margin-bottom: 0.35rem;
+    }
+
+    .chart-bar-bg {
+        background: #e3eef6;
+        border-radius: 30px;
+        height: 12px;
+        overflow: hidden;
+    }
+
+    .chart-bar-fill {
+        height: 100%;
+        border-radius: 30px;
+        background: linear-gradient(90deg, #4b8bbe, #1e6f9f);
+        transition: width 0.5s ease;
+    }
+
+    .chart-bar-fill.low { background: linear-gradient(90deg, #4bbf88, #2c8c62); }
+    .chart-bar-fill.medium { background: linear-gradient(90deg, #e8b85b, #d18f2c); }
+    .chart-bar-fill.high { background: linear-gradient(90deg, #e07676, #c74a4a); }
+
+    /* 排行榜 */
+    .rank-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .rank-item {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.6rem 0.8rem;
+        background: #f6fbff;
+        border-radius: 0.8rem;
+        border: 1px solid #e1eff9;
+    }
+
+    .rank-no {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: #1e6f9f;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .rank-no.top1 { background: #e0a800; }
+    .rank-no.top2 { background: #a0a8b0; }
+    .rank-no.top3 { background: #c58550; }
+
+    .rank-name {
+        flex: 1;
+        font-weight: 600;
+        color: #0b3954;
+        font-size: 0.9rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .rank-hours {
+        font-weight: 700;
+        color: #1e6f9f;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+
+    /* 历史记录 */
+    .history-item {
+        background: #f9fcff;
+        border-radius: 1rem;
+        padding: 1rem;
+        margin-bottom: 0.8rem;
+        border: 1px solid #dceaf5;
+        border-left: 4px solid #4b8bbe;
+    }
+
+    .history-date {
+        font-weight: 700;
+        color: #1e6f9f;
+        font-size: 0.95rem;
+        margin-bottom: 0.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+    }
+
+    .history-date .stats {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #5580a0;
+        background: #eaf2f8;
+        padding: 0.2rem 0.7rem;
+        border-radius: 20px;
+    }
+
+    .history-students {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .history-student {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.6rem;
+        padding: 0.5rem 0.7rem;
+        background: white;
+        border-radius: 0.7rem;
+        font-size: 0.85rem;
+        border: 1px solid #e8f1f8;
+    }
+
+    .history-student .hs-name {
+        font-weight: 700;
+        color: #0b3954;
+        flex-shrink: 0;
+    }
+
+    .history-student .hs-plan {
+        color: #557a92;
+        flex: 1;
+        text-align: right;
+        word-break: break-word;
+        font-size: 0.8rem;
+        line-height: 1.35;
+    }
+
+    .history-student .hs-hours {
+        font-weight: 700;
+        color: #1e6f9f;
+        margin-left: 0.4rem;
+        flex-shrink: 0;
+    }
+
+    /* 时间范围选择器 */
+    .range-selector {
+        display: flex;
+        gap: 0.4rem;
+        margin-bottom: 1rem;
+        background: #eaf2f8;
+        padding: 0.3rem;
+        border-radius: 0.9rem;
+    }
+
+    .range-btn {
+        flex: 1;
+        border: none;
+        background: transparent;
+        padding: 0.5rem 0.3rem;
+        border-radius: 0.7rem;
+        font-weight: 600;
+        font-size: 0.82rem;
+        color: #5580a0;
+        cursor: pointer;
+        transition: 0.15s;
+        font-family: inherit;
+    }
+
+    .range-btn.active {
+        background: white;
+        color: #1e6f9f;
+        box-shadow: 0 2px 6px -2px rgba(0, 0, 0, 0.15);
+    }
+
+    /* 提示条 */
+    .toast {
+        position: fixed;
+        bottom: 1.5rem;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: #0b3954;
+        color: white;
+        padding: 0.7rem 1.3rem;
+        border-radius: 2rem;
+        font-size: 0.88rem;
+        font-weight: 600;
+        box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.4);
+        opacity: 0;
+        transition: 0.3s;
+        z-index: 999;
+        pointer-events: none;
+        max-width: 90vw;
+        text-align: center;
+    }
+
+    .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    /* 滚动条美化 */
+    .student-list::-webkit-scrollbar { width: 5px; }
+    .student-list::-webkit-scrollbar-track { background: #e3eef6; border-radius: 10px; }
+    .student-list::-webkit-scrollbar-thumb { background: #a0c1d9; border-radius: 10px; }
+
+    /* 日期选择器 */
+    .date-input {
+        width: 100%;
+        padding: 0.65rem 0.9rem;
+        border-radius: 0.9rem;
+        border: 1.5px solid #d0e3f0;
+        background: #fafdff;
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: #0b2b3b;
+        font-family: inherit;
+        outline: none;
+    }
+
+    /* 移动端适配 */
+    @media (max-width: 600px) {
+        body { padding: 0.6rem; font-size: 14px; }
+        .header { padding: 1rem 1.1rem; border-radius: 1.1rem; }
+        .header h1 { font-size: 1.05rem; }
+        .card { padding: 1rem; border-radius: 1.1rem; }
+        .summary-card .num { font-size: 1.3rem; }
+        .rank-item { padding: 0.5rem 0.6rem; }
+        .history-student {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .history-student .hs-plan {
+            text-align: left;
+            margin-top: 0.2rem;
+        }
+    }
+</style>
+</head>
+<body>
+
+<div class="app">
+    <!-- 顶部 -->
+    <div class="header">
+        <h1>📚 学生工作量 & 计划统计</h1>
+        <div class="today-badge" id="todayBadge">📅 --</div>
+    </div>
+
+    <!-- 标签导航 -->
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="today">📝 今日录入</button>
+        <button class="tab-btn" data-tab="stats">📊 统计</button>
+        <button class="tab-btn" data-tab="history">📜 历史记录</button>
+        <button class="tab-btn" data-tab="manage">⚙️ 数据管理</button>
+    </div>
+
+    <!-- ========== 今日录入 ========== -->
+    <div class="panel active" id="panel-today">
+        <!-- 日期选择 -->
+        <div class="card">
+            <h2>📅 选择日期</h2>
+            <input type="date" id="dateSelector" class="date-input">
+            <div style="margin-top:0.6rem;font-size:0.8rem;color:#5580a0;">
+                提示：默认是"明天"，你可以修改成任意日期来补录或预填
+            </div>
+        </div>
+
+        <!-- 添加学生表单 -->
+        <div class="card">
+            <h2>✏️ 添加 / 更新学生</h2>
+            <form id="studentForm">
+                <div class="form-group">
+                    <label for="studentName">👤 学生姓名</label>
+                    <input type="text" id="studentName" placeholder="例如：陈小星" required maxlength="20" autocomplete="off">
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        <label for="workload">📊 工作量 (小时)</label>
+                        <input type="number" id="workload" placeholder="0" min="0" step="0.5" value="2" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="plan">📌 接下来的工作计划</label>
+                    <textarea id="plan" placeholder="例如：复习数学第三章，完成英语阅读两篇..." rows="2" maxlength="200"></textarea>
+                </div>
+
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-success" style="flex:1;">➕ 保存学生</button>
+                    <button type="button" class="btn btn-secondary" id="clearFormBtn">🧹 清空</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- 当日学生列表 -->
+        <div class="card">
+            <h2>📋 当前日期记录 <span id="currentDateLabel" style="font-size:0.8rem;color:#5580a0;font-weight:500;"></span></h2>
+            <div id="studentListContainer" class="student-list">
+                <div class="empty-message">🕊️ 还没有学生记录，请在上方添加</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 统计 ========== -->
+    <div class="panel" id="panel-stats">
+        <!-- 汇总卡片 -->
+        <div class="card">
+            <h2>📈 总体汇总</h2>
+            <div class="summary-bar">
+                <div class="summary-card">
+                    <div class="num" id="statTotalStudents">0</div>
+                    <div class="lbl">总学生数</div>
+                </div>
+                <div class="summary-card">
+                    <div class="num" id="statTotalHours">0</div>
+                    <div class="lbl">总工作量(时)</div>
+                </div>
+                <div class="summary-card">
+                    <div class="num" id="statAvgHours">0</div>
+                    <div class="lbl">人均工作量</div>
+                </div>
+                <div class="summary-card">
+                    <div class="num" id="statDays">0</div>
+                    <div class="lbl">记录天数</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 当前日期工作量分布 -->
+        <div class="card">
+            <h2>📊 各学生工作量分布 <span id="statsDateLabel" style="font-size:0.8rem;color:#5580a0;font-weight:500;"></span></h2>
+            <div id="chartContainer">
+                <div class="empty-message">暂无数据</div>
+            </div>
+        </div>
+
+        <!-- 学生排行榜（按累计工作量） -->
+        <div class="card">
+            <h2>🏆 学生累计工作量排行</h2>
+            <div id="rankContainer" class="rank-list">
+                <div class="empty-message">暂无数据</div>
+            </div>
+        </div>
+
+        <!-- 工作量区间分布 -->
+        <div class="card">
+            <h2>🎯 工作量区间分布（所有记录）</h2>
+            <div id="distributionContainer">
+                <div class="empty-message">暂无数据</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 历史记录 ========== -->
+    <div class="panel" id="panel-history">
+        <div class="card">
+            <h2>📜 历史记录</h2>
+            <div class="range-selector">
+                <button class="range-btn active" data-range="7">近 7 天</button>
+                <button class="range-btn" data-range="30">近 30 天</button>
+                <button class="range-btn" data-range="all">全部</button>
+            </div>
+            <div id="historyContainer">
+                <div class="empty-message">暂无历史记录</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 数据管理 ========== -->
+    <div class="panel" id="panel-manage">
+        <div class="card">
+            <h2>💾 数据备份</h2>
+            <p style="font-size:0.88rem;color:#557a92;margin-bottom:1rem;line-height:1.5;">
+                数据保存在浏览器本地。清理浏览器缓存、更换设备或浏览器会导致数据丢失，建议定期导出备份。
+            </p>
+            <div class="btn-group">
+                <button class="btn btn-success" id="exportBtn">📤 导出数据 (JSON)</button>
+                <button class="btn btn-secondary" id="importBtn">📥 导入数据</button>
+                <input type="file" id="importFile" accept=".json,application/json" style="display:none;">
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🗑️ 危险操作</h2>
+            <div class="btn-group">
+                <button class="btn btn-secondary" id="clearTodayBtn">🧹 清空当前日期记录</button>
+                <button class="btn btn-danger" id="resetAllBtn">⚠️ 清空所有数据</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 提示条 -->
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+    'use strict';
+
+    // ==================== 常量 ====================
+    const STORAGE_KEY = 'student_workload_planner_v2';
+    const OLD_STORAGE_KEY = 'student_workload_planner'; // 兼容旧版
+
+    // ==================== 状态 ====================
+    // records: { "2024-01-15": [ { name, workload, plan }, ... ], ... }
+    let records = {};
+    // 当前选中的日期
+    let currentDate = '';
+    // 历史范围
+    let historyRange = '7';
+
+    // ==================== DOM ====================
+    const $ = (id) => document.getElementById(id);
+
+    const dateSelector = $('dateSelector');
+    const todayBadge = $('todayBadge');
+    const studentForm = $('studentForm');
+    const studentNameInput = $('studentName');
+    const workloadInput = $('workload');
+    const planInput = $('plan');
+    const studentListContainer = $('studentListContainer');
+    const currentDateLabel = $('currentDateLabel');
+    const clearFormBtn = $('clearFormBtn');
+
+    // 统计
+    const statTotalStudents = $('statTotalStudents');
+    const statTotalHours = $('statTotalHours');
+    const statAvgHours = $('statAvgHours');
+    const statDays = $('statDays');
+    const statsDateLabel = $('statsDateLabel');
+    const chartContainer = $('chartContainer');
+    const rankContainer = $('rankContainer');
+    const distributionContainer = $('distributionContainer');
+
+    // 历史
+    const historyContainer = $('historyContainer');
+
+    // 管理
+    const exportBtn = $('exportBtn');
+    const importBtn = $('importBtn');
+    const importFile = $('importFile');
+    const clearTodayBtn = $('clearTodayBtn');
+    const resetAllBtn = $('resetAllBtn');
+
+    const toastEl = $('toast');
+
+    // ==================== 工具函数 ====================
+
+    // 获取今天的日期字符串 YYYY-MM-DD
+    function getTodayStr() {
+        const d = new Date();
+        return formatDate(d);
+    }
+
+    // 获取明天的日期字符串
+    function getTomorrowStr() {
+        const d = new Date();
+        d.setDate(d.getDate() + 1);
+        return formatDate(d);
+    }
+
+    // 格式化日期对象为 YYYY-MM-DD
+    function formatDate(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+
+    // 友好的日期显示（如：1月15日 周一）
+    function friendlyDate(dateStr) {
+        if (!dateStr) return '';
+        const [y, m, d] = dateStr.split('-').map(Number);
+        const date = new Date(y, m - 1, d);
+        const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+        const today = getTodayStr();
+        const tomorrow = getTomorrowStr();
+        let prefix = '';
+        if (dateStr === today) prefix = '今天 · ';
+        else if (dateStr === tomorrow) prefix = '明天 · ';
+        return `${prefix}${m}月${d}日 ${weekdays[date.getDay()]}`;
+    }
+
+    // 显示提示条
+    let toastTimer = null;
+    function showToast(msg, duration = 2000) {
+        toastEl.textContent = msg;
+        toastEl.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+            toastEl.classList.remove('show');
+        }, duration);
+    }
+
+    // HTML 转义
+    function escapeHtml(text) {
+        if (text === null || text === undefined) return '';
+        const div = document.createElement('div');
+        div.textContent = String(text);
+        return div.innerHTML;
+    }
+
+    // 根据工作量获取等级样式
+    function getLevel(workload) {
+        if (workload <= 3) return 'low';
+        if (workload <= 6) return 'medium';
+        return 'high';
+    }
+
+    // ==================== 数据存取 ====================
+
+    function saveData() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+        } catch (e) {
+            console.warn('保存失败', e);
+            showToast('⚠️ 保存失败，存储空间可能已满');
+        }
+    }
+
+    function loadData() {
+        try {
+            // 优先读取新版
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                    records = parsed;
+                    return;
+                }
+            }
+            // 尝试从旧版迁移
+            const old = localStorage.getItem(OLD_STORAGE_KEY);
+            if (old) {
+                const oldData = JSON.parse(old);
+                if (Array.isArray(oldData) && oldData.length > 0) {
+                    // 把旧数据放到"今天"
+                    const today = getTodayStr();
+                    records = { [today]: oldData.map(s => ({
+                        name: s.name || '未命名',
+                        workload: typeof s.workload === 'number' ? s.workload : 0,
+                        plan: s.plan || '暂无计划'
+                    })) };
+                    saveData();
+                    localStorage.removeItem(OLD_STORAGE_KEY);
+                    showToast('📦 已从旧版本迁移数据');
+                }
+            }
+        } catch (e) {
+            console.warn('读取失败', e);
+            records = {};
+        }
+    }
+
+    // ==================== 核心渲染 ====================
+
+    // 获取当前日期的学生数组
+    function getCurrentStudents() {
+        return records[currentDate] || [];
+    }
+
+    // 渲染当前日期的学生列表
+    function renderStudentList() {
+        const students = getCurrentStudents();
+
+        currentDateLabel.textContent = `(${friendlyDate(currentDate)})`;
+
+        if (students.length === 0) {
+            studentListContainer.innerHTML = `<div class="empty-message">🕊️ 还没有学生记录，请在上方添加</div>`;
+            return;
+        }
+
+        let html = '';
+        students.forEach((s, idx) => {
+            const wl = s.workload || 0;
+            const level = getLevel(wl);
+            const wlDisplay = wl % 1 === 0 ? wl : wl.toFixed(1);
+            html += `
+                <div class="student-item">
+                    <div class="student-header">
+                        <div class="student-name">🧑‍🎓 ${escapeHtml(s.name)}</div>
+                        <div style="display:flex;align-items:center;gap:0.4rem;">
+                            <span class="badge badge-${level}">⏱️ ${wlDisplay} 小时</span>
+                            <button class="btn btn-danger btn-sm" data-action="delete" data-index="${idx}" title="删除">✕</button>
+                        </div>
+                    </div>
+                    <div class="plan-text">
+                        <span class="plan-label">📌 计划</span> ${escapeHtml(s.plan || '暂无计划')}
+                    </div>
+                </div>
+            `;
+        });
+        studentListContainer.innerHTML = html;
+
+        // 绑定删除按钮
+        studentListContainer.querySelectorAll('[data-action="delete"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(e.currentTarget.dataset.index, 10);
+                deleteStudent(idx);
+            });
+        });
+    }
+
+    // 删除学生
+    function deleteStudent(idx) {
+        const students = getCurrentStudents();
+        if (idx < 0 || idx >= students.length) return;
+        const name = students[idx].name;
+        if (!confirm(`确定删除学生「${name}」的记录吗？`)) return;
+        students.splice(idx, 1);
+        if (students.length === 0) {
+            delete records[currentDate];
+        } else {
+            records[currentDate] = students;
+        }
+        saveData();
+        renderStudentList();
+        updateStats();
+        showToast('🗑️ 已删除');
+    }
+
+    // 渲染统计页面
+    function updateStats() {
+        // 1. 总体汇总        const allDates = Object.keys(records).sort();
+        let totalStudents = 0;
+        let totalHours = 0;
+        const studentHoursMap = {}; // 累计每个学生的工作量
+
+        allDates.forEach(date => {
+            (records[date] || []).forEach(s => {
+                totalStudents++;
+                const wl = s.workload || 0;
+                totalHours += wl;
+                const key = s.name.trim();
+                studentHoursMap[key] = (studentHoursMap[key] || 0) + wl;
+            });
+        });
+
+        const days = allDates.length;
+        const uniqueStudentCount = Object.keys(studentHoursMap).length;
+        const avg = uniqueStudentCount > 0 ? (totalHours / uniqueStudentCount) : 0;
+
+        statTotalStudents.textContent = uniqueStudentCount;
+        statTotalHours.textContent = totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1);
+        statAvgHours.textContent = avg % 1 === 0 ? avg : avg.toFixed(1);
+        statDays.textContent = days;
+
+        // 2. 当前日期工作量分布
+        const currentStudents = getCurrentStudents();
+        statsDateLabel.textContent = `(${friendlyDate(currentDate)})`;
+
+        if (currentStudents.length === 0) {
+            chartContainer.innerHTML = `<div class="empty-message">该日期暂无数据</div>`;
+        } else {
+            const maxWl = Math.max(...currentStudents.map(s => s.workload || 0), 1);
+            let html = '';
+            // 按工作量降序
+            const sorted = [...currentStudents].sort((a, b) => (b.workload || 0) - (a.workload || 0));
+            sorted.forEach(s => {
+                const wl = s.workload || 0;
+                const level = getLevel(wl);
+                const percent = maxWl > 0 ? (wl / maxWl * 100) : 0;
+                const wlDisplay = wl % 1 === 0 ? wl : wl.toFixed(1);
+                html += `
+                    <div class="chart-row">
+                        <div class="chart-label">
+                            <span>${escapeHtml(s.name)}</span>
+                            <span>${wlDisplay} 小时</span>
+                        </div>
+                        <div class="chart-bar-bg">
+                            <div class="chart-bar-fill ${level}" style="width:${percent}%;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            chartContainer.innerHTML = html;
+        }
+
+        // 3. 学生累计排行榜
+        const rankArr = Object.entries(studentHoursMap)
+            .map(([name, hours]) => ({ name, hours }))
+            .sort((a, b) => b.hours - a.hours)
+            .slice(0, 10);
+
+        if (rankArr.length === 0) {
+            rankContainer.innerHTML = `<div class="empty-message">暂无数据</div>`;
+        } else {
+            let html = '';
+            rankArr.forEach((item, i) => {
+                const rankClass = i === 0 ? 'top1' : i === 1 ? 'top2' : i === 2 ? 'top3' : '';
+                const h = item.hours % 1 === 0 ? item.hours : item.hours.toFixed(1);
+                html += `
+                    <div class="rank-item">
+                        <div class="rank-no ${rankClass}">${i + 1}</div>
+                        <div class="rank-name">${escapeHtml(item.name)}</div>
+                        <div class="rank-hours">${h} 小时</div>
+                    </div>
+                `;
+            });
+            rankContainer.innerHTML = html;
+        }
+
+        // 4. 工作量区间分布（所有记录）
+        const buckets = { '0-2h': 0, '2-4h': 0, '4-6h': 0, '6-8h': 0, '8h+': 0 };
+        allDates.forEach(date => {
+            (records[date] || []).forEach(s => {
+                const wl = s.workload || 0;
+                if (wl < 2) buckets['0-2h']++;
+                else if (wl < 4) buckets['2-4h']++;
+                else if (wl < 6) buckets['4-6h']++;
+                else if (wl < 8) buckets['6-8h']++;
+                else buckets['8h+']++;
+            });
+        });
+
+        const totalBucket = Object.values(buckets).reduce((a, b) => a + b, 0);
+        if (totalBucket === 0) {
+            distributionContainer.innerHTML = `<div class="empty-message">暂无数据</div>`;
+        } else {
+            let html = '';
+            const maxBucket = Math.max(...Object.values(buckets), 1);
+            Object.entries(buckets).forEach(([label, count]) => {
+                const percent = (count / maxBucket * 100);
+                html += `
+                    <div class="chart-row">
+                        <div class="chart-label">
+                            <span>${label}</span>
+                            <span>${count} 人</span>
+                        </div>
+                        <div class="chart-bar-bg">
+                            <div class="chart-bar-fill" style="width:${percent}%;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            distributionContainer.innerHTML = html;
+        }
+    }
+
+    // 渲染历史记录
+    function renderHistory() {
+        const allDates = Object.keys(records).sort().reverse(); // 降序
+        if (allDates.length === 0) {
+            historyContainer.innerHTML = `<div class="empty-message">暂无历史记录</div>`;
+            return;
+        }
+
+        // 根据范围过滤
+        let filteredDates = allDates;
+        if (historyRange !== 'all') {
+            const days = parseInt(historyRange, 10);
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - days);
+            const cutoffStr = formatDate(cutoff);
+            filteredDates = allDates.filter(d => d >= cutoffStr);
+        }
+
+        if (filteredDates.length === 0) {
+            historyContainer.innerHTML = `<div class="empty-message">该时间范围内暂无记录</div>`;
+            return;
+        }
+
+        let html = '';
+        filteredDates.forEach(date => {
+            const students = records[date] || [];
+            if (students.length === 0) return;
+
+            const totalHours = students.reduce((sum, s) => sum + (s.workload || 0), 0);
+            const totalDisplay = totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1);
+
+            html += `
+                <div class="history-item">
+                    <div class="history-date">
+                        <span>📅 ${friendlyDate(date)}</span>
+                        <span class="stats">👥 ${students.length} 人 · ⏱️ ${totalDisplay} 小时</span>
+                    </div>
+                    <div class="history-students">
+            `;
+
+            students.forEach(s => {
+                const wl = s.workload || 0;
+                const wlDisplay = wl % 1 === 0 ? wl : wl.toFixed(1);
+                html += `
+                    <div class="history-student">
+                        <div class="hs-name">${escapeHtml(s.name)}</div>
+                        <div class="hs-plan">${escapeHtml(s.plan || '暂无计划')}<span class="hs-hours">· ${wlDisplay}h</span></div>
+                    </div>
+                `;
+            });
+
+            html += `</div></div>`;
+        });
+
+        historyContainer.innerHTML = html || `<div class="empty-message">暂无记录</div>`;
+    }
+
+    // 刷新当前视图的统计
+    function refreshAll() {
+        renderStudentList();
+        updateStats();
+        renderHistory();
+    }
+
+    // ==================== 事件绑定 ====================
+
+    // 标签切换
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            btn.classList.add('active');
+            const tab = btn.dataset.tab;
+            $('panel-' + tab).classList.add('active');
+
+            // 切换到统计/历史时刷新
+            if (tab === 'stats') updateStats();
+            if (tab === 'history') renderHistory();
+        });
+    });
+
+    // 日期切换
+    dateSelector.addEventListener('change', () => {
+        currentDate = dateSelector.value || getTomorrowStr();
+        renderStudentList();
+        updateStats();
+    });
+
+    // 表单提交
+    studentForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = studentNameInput.value.trim();
+        if (!name) {
+            showToast('请输入学生姓名');
+            return;
+        }
+
+        let workload = parseFloat(workloadInput.value);
+        if (isNaN(workload) || workload < 0) workload = 0;
+        workload = Math.round(workload * 10) / 10;
+
+        const plan = planInput.value.trim() || '暂无计划';
+
+        if (!records[currentDate]) records[currentDate] = [];
+        const students = records[currentDate];
+
+        // 查找同名（不区分大小写）
+        const idx = students.findIndex(s => s.name.trim().toLowerCase() === name.toLowerCase());
+
+        if (idx !== -1) {
+            // 更新
+            students[idx] = { name, workload, plan };
+            showToast(`✅ 已更新「${name}」`);
+        } else {
+            students.push({ name, workload, plan });
+            showToast(`✅ 已添加「${name}」`);
+        }
+
+        saveData();
+        renderStudentList();
+        updateStats();
+
+        // 清空表单
+        studentNameInput.value = '';
+        workloadInput.value = '2';
+        planInput.value = '';
+        studentNameInput.focus();
+    });
+
+    // 清空表单
+    clearFormBtn.addEventListener('click', () => {
+        studentNameInput.value = '';
+        workloadInput.value = '2';
+        planInput.value = '';
+        studentNameInput.focus();
+    });
+
+    // 历史范围切换
+    document.querySelectorAll('.range-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            historyRange = btn.dataset.range;
+            renderHistory();
+        });
+    });
+
+    // 导出数据
+    exportBtn.addEventListener('click', () => {
+        const dataStr = JSON.stringify(records, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `学生工作量备份_${getTodayStr()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('📤 数据已导出');
+    });
+
+    // 导入数据
+    importBtn.addEventListener('click', () => {
+        importFile.click();
+    });
+
+    importFile.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            try {
+                const data = JSON.parse(ev.target.result);
+                if (!data || typeof data !== 'object' || Array.isArray(data)) {
+                    throw new Error('格式错误');
+                }
+                // 简单校验
+                const valid = Object.values(data).every(arr => Array.isArray(arr));
+                if (!valid) throw new Error('数据格式不正确');
+
+                if (confirm('导入将覆盖现有数据，是否继续？建议先导出备份。')) {
+                    records = data;
+                    saveData();
+                    refreshAll();
+                    // 同步日期选择器
+                    if (!records[currentDate]) {
+                        // 如果当前日期不存在数据，依然保留选择
+                    }
+                    showToast('📥 数据导入成功');
+                }
+            } catch (err) {
+                alert('导入失败：文件格式不正确');
+            }
+            importFile.value = '';
+        };
+        reader.readAsText(file);
+    });
+
+    // 清空当前日期
+    clearTodayBtn.addEventListener('click', () => {
+        const students = getCurrentStudents();
+        if (students.length === 0) {
+            showToast('当前日期没有记录');
+            return;
+        }
+        if (confirm(`确定清空「${friendlyDate(currentDate)}」的全部 ${students.length} 条记录吗？`)) {
+            delete records[currentDate];
+            saveData();
+            renderStudentList();
+            updateStats();
+            renderHistory();
+            showToast('🧹 已清空当前日期');
+        }
+    });
+
+    // 清空所有数据
+    resetAllBtn.addEventListener('click', () => {
+        if (Object.keys(records).length === 0) {
+            showToast('暂无数据');
+            return;
+        }
+        if (confirm('⚠️ 确定要清空所有数据吗？此操作不可恢复！建议先导出备份。')) {
+            records = {};
+            saveData();
+            refreshAll();
+            showToast('🗑️ 所有数据已清空');
+        }
+    });
+
+    // ==================== 初始化 ====================
+    function init() {
+        loadData();
+
+        // 默认日期：明天
+        const defaultDate = getTomorrowStr();
+        currentDate = defaultDate;
+        dateSelector.value = defaultDate;
+
+        // 顶部显示今天
+        const today = new Date();
+        const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+        todayBadge.textContent = `📅 今天 ${today.getMonth() + 1}月${today.getDate()}日 ${weekdays[today.getDay()]}`;
+
+        renderStudentList();
+        updateStats();
+        renderHistory();
+    }
+
+    init();
+
+})();
+</script>
+</body>
+</html>
